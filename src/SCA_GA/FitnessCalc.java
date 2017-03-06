@@ -3,6 +3,7 @@ package SCA_GA;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 /**
  * Created by jiao.xue on 2017/02/03.
@@ -32,13 +33,13 @@ public class FitnessCalc {
     //public static void main(String args[]) throws IOException {
     public static HashMap<Integer, HashMap<Integer, Double>> make_DB() throws IOException {
 
-            File file = new File("/Users/jiao.xue/Dropbox/SCA/SCA.xls");
+            File file = new File("/Users/jiao/Dropbox/SCA/SCA.xls");
 
         for(int i=0;i<6;i++) {
             int type =i+1;
-            File outfile1 = new File("/Users/jiao.xue/Dropbox/SCA/"+"type"+type+"best_individual.csv");
-            File outfile2 = new File("/Users/jiao.xue/Dropbox/SCA/"+"type"+type+"percentage.csv");
-            Calculation(file,outfile1,outfile2,type);
+            File outfile1 = new File("/Users/jiao/Dropbox/SCA/"+"type"+type+"best_individuals.csv");
+           //File outfile2 = new File("/Users/jiao/Dropbox/SCA/"+"type"+type+"percentage.csv");
+            Calculation(file,outfile1,type);//DBを作る　ファイルを書き出す
         }
 
         return DB;
@@ -46,7 +47,7 @@ public class FitnessCalc {
     }
 
 
-    public static void Calculation(File file,File outfile1,File outfile2,int type) throws IOException {
+    public static void Calculation(File file,File outfile1,int type) throws IOException {
 
 
         standard = files.standard(file, type);
@@ -78,8 +79,9 @@ public class FitnessCalc {
 
 
         print_best_unit(getBestIndividual(myPop),outfile1);
-      //print_percentage(getBestIndividual(myPop),outfile2);
         DB(getBestIndividual(myPop),type);
+     // print_percentage(getBestIndividual(myPop),outfile2);
+
 
     }
 
@@ -186,28 +188,42 @@ public class FitnessCalc {
 
         int x = 0;
         //maps.put(type,1.0/NO_OF_PARAMETERS);
-
+        int cal=0;
         for(int i = 0; i<individual.size(); ++i) {
             x = individual.getGene(i);
-            if(!DB.containsKey(x)){
-                HashMap<Integer, Double> maps = new HashMap<>();//症状がキー、確率が値
-                maps.put(type,1.0/NO_OF_PARAMETERS);
-                DB.put(x,maps);
+            if(x!=0) {
+                cal++;
             }
-            if(DB.containsKey(x)) {
-                HashMap<Integer, Double> maps = new HashMap<>();//症状がキー、確率が値
-                maps = DB.get(x);
-                if(!maps.containsKey(type)) {
-                    maps.put(type,1.0/NO_OF_PARAMETERS);
-                    DB.put(x,maps);
-                }
-                else {
+        }
+        System.out.println("type"+type+" is "+cal);
 
-                    double  t= maps.get(type) + (1.0 / NO_OF_PARAMETERS);
-                    maps.put(type, t);
-                    DB.put(x,maps);
+        for(int i = 0; i<individual.size(); ++i) {
+
+            x = individual.getGene(i);
+            if(x!=0) {
+                if (!DB.containsKey(x)) {
+                    HashMap<Integer, Double> maps = new HashMap<>();//症状がキー、確率が値
+                    maps.put(type, 1.0 / cal);
+                    //maps.put(type, 1.0);
+                    DB.put(x, maps);
+                }
+               else if (DB.containsKey(x)) {
+                    HashMap<Integer, Double> maps = new HashMap<>();//症状がキー、確率が値
+                    maps = DB.get(x);
+                    if (!maps.containsKey(type)) {
+                        maps.put(type, 1.0 / cal);
+                        //maps.put(type, 1.0);
+                        DB.put(x, maps);
+                    } else {
+
+                        double t = maps.get(type) + (1.0 / cal);
+                        // double t = maps.get(type) + 1.0;
+                        maps.put(type, t);
+                        DB.put(x, maps);
+                    }
                 }
             }
+
         }
 
 
@@ -215,28 +231,38 @@ public class FitnessCalc {
     }
 
     //結果を書き出す
-    public static void print_percentage(Individual individual, File outfile)  {
+    public static void print_percentage(HashMap<Integer, HashMap<Integer, Double>> DB, File outfile)  {
 
         try{
             PrintWriter output = new PrintWriter(new OutputStreamWriter(new FileOutputStream(outfile, false), "Shift_JIS"));//結合した結果を新しいファイル'out'に保存する
 
-            System.out.println("Evaluation value: " + individual.getFitness());
+           // System.out.println("Evaluation value: " + individual.getFitness());
+            output.write("type,neurological presentation,dementia,cerebellar dysarthria,gait ataxia,limb ataxia,romberg sign,babinski sign,vertical supra-nuclear,gaze palsy,Gaze-evoked nystagmus,disturbance of slow,eye mobement,parkinsonism,limb reflex,hyperactive,sluggish,Normal,");
+            output.write(",sporadic,autosomal dominant,autosomal recessive,other genetic types,spastic palsy,unknown");
 
-            int[] recorder = new int[defaultGeneLength];
-            int x = 0;
-            output.write("time,percentage");
-            for(int i = 0; i<individual.size(); ++i) {
-                x = individual.getGene(i);
-                recorder[x]=recorder[x]+1;
-            }
-            for(int j=0;j<defaultGeneLength;j++){
-                output.write("\n"+Math.round(j)+","+(double)recorder[j]/NO_OF_PARAMETERS);//四捨五入
-                //  System.out.println("percentage"+change((int)Math.round(j))+" is "+(double)recorder[j]/NO_OF_PARAMETERS);
+            for(Entry<Integer, HashMap<Integer, Double>> entry:DB.entrySet()){
+                output.write("\n"+entry.getKey()+",");
+                byte[] property= change(entry.getKey());
+
+                for(int j=0;j<defaultGeneLength;j++){//変換
+                    output.write(property[j]+",");
+                }
+                HashMap<Integer, Double> map=entry.getValue();
+                double[] record= new double[6];
+                for(Entry<Integer, Double> entrys:map.entrySet()) {
+                    record[entrys.getKey()-1]= entrys.getValue(); //先に記録
+                    //System.out.println(entrys.getKey());
+
+                }
+                for(int i=0;i<6;i++) {
+                    output.write("," + record[i]);
+                }
             }
             output.close();
         }catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
 

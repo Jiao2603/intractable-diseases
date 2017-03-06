@@ -1,5 +1,6 @@
 package SCA_GA;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -12,7 +13,8 @@ public class APP {
 
     public static void main(String args[]) throws IOException {
         DB=FitnessCalc.make_DB();
-
+        File outfile2 = new File("/Users/jiao/Dropbox/SCA/"+"percentage.csv");
+       FitnessCalc.print_percentage(DB,outfile2);
         System.out.println("DB.size()"+DB.size());
 
         //int[] illness = new int[defaultGeneLength];//症状を入力1,1....
@@ -21,6 +23,7 @@ public class APP {
 
         if(illness.length==defaultGeneLength) {
             int ills = trans(illness);//症状の番号に変る
+
 
             if (DB.containsKey(ills)) {
                 System.out.println(DB.get(ills));
