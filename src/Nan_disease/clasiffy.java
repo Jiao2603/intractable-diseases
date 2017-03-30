@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * Created by jiao on 2017/02/24.
+ * read_txtから抽出されたファイルを加工する結果をDB.csvに保存する
  */
 public class clasiffy {
     public static int main=8;//主症状、8種類
@@ -38,11 +39,13 @@ public class clasiffy {
                     "レンサ球菌ワクチン-プリックテスト," +
                     "赤沈値の亢進（＞30mm),血清CRPの陽性化（＞１．０),末梢血白血球数の増加（＞１０，０００）,補体価の上昇（＞40単位）," +
                     "リンパ球性血管炎と脂肪組織炎,壊死性血管炎," );
-            output.write("人数");
+            output.write(",人数,割合");
 
             BufferedReader br = new BufferedReader(new FileReader(list));
             String str ;
+            int population=0;
             while((str=br.readLine())!= null) {
+                population++;
                 int[] record= new int[main+sub+another];
                 String[] pair = str.split(",");
 
@@ -56,17 +59,26 @@ public class clasiffy {
                         //System.out.print(record[i]);
                     }
                 }
-                System.out.print(types(record));
+              ////  System.out.print(types(record));
                 if (!DB_patient.containsKey(types(record))) {
                     DB_patient.put(types(record), 1);
-                    System.out.println(","+ DB_patient.get(types(record)));
+             ////       System.out.println(","+ DB_patient.get(types(record)));
                 }
                 else{
                     int num=DB_patient.get(types(record));
                     DB_patient.put(types(record), num+1);
-                    System.out.println(","+ DB_patient.get(types(record)));
+               ////     System.out.println(","+ DB_patient.get(types(record)));
                 }
             }
+            ////////////////回答してない人のデータを除く、
+            int useless_num=0;
+
+            if(DB_patient.containsKey(0.0)){
+                useless_num=DB_patient.get(0.0);
+                System.out.println(useless_num);
+            }
+
+
             for(Map.Entry<Double,Integer> entry:DB_patient.entrySet()){
                 output.write("\n"+entry.getKey()+",");
                 int[] property= change(entry.getKey());
@@ -76,9 +88,10 @@ public class clasiffy {
                 }
                 int a=entry.getValue();
 
-                    output.write("," + a);
-            }
+                    output.write(","+entry.getValue());
+                    output.write("," + (double)a/(population-useless_num));
 
+            }
 
 
 
